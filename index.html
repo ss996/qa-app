@@ -398,11 +398,16 @@
 请严格根据以上内容回答问题。若问题超出范围，请如实说明。"></textarea>
       </div>
       <div class="field">
+        <label>Base URL</label>
+        <input type="text" id="baseurl-input" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
         <label>模型</label>
         <select id="model-select">
-          <option value="gpt-4o-mini">GPT-4o mini（经济，推荐）</option>
-          <option value="gpt-4o">GPT-4o（更强）</option>
-          <option value="gpt-4-turbo">GPT-4 Turbo</option>
+          <option value="qwen-plus">qwen-plus（推荐）</option>
+          <option value="qwen-max">qwen-max（最强）</option>
+          <option value="qwen-turbo">qwen-turbo（快速经济）</option>
+          <option value="qwen-long">qwen-long（长文档）</option>
         </select>
       </div>
       <div class="field">
@@ -416,15 +421,19 @@
 
 <script>
 // State
-let apiKey = localStorage.getItem('qa_key') || '';
+const DEFAULT_API_KEY = 'sk-1bf01ad176344a9a9e77290830a2418c';
+const DEFAULT_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+let apiKey = localStorage.getItem('qa_key') || DEFAULT_API_KEY;
+let baseURL = localStorage.getItem('qa_baseurl') || DEFAULT_BASE_URL;
 let systemPrompt = localStorage.getItem('qa_prompt') || '你是一个专业的问答助手。请根据提供的知识库内容回答用户问题。如果问题超出知识库范围，请如实告知用户。';
-let model = localStorage.getItem('qa_model') || 'gpt-4o-mini';
+let model = localStorage.getItem('qa_model') || 'qwen-plus';
 let appName = localStorage.getItem('qa_name') || '知识问答';
 let history = [];
 let loading = false;
 
 // Init
 document.getElementById('api-key-input').value = apiKey;
+document.getElementById('baseurl-input').value = baseURL;
 document.getElementById('system-prompt-input').value = systemPrompt;
 document.getElementById('model-select').value = model;
 document.getElementById('app-name-input').value = appName;
@@ -453,13 +462,15 @@ function handleOverlayClick(e) {
 }
 
 function saveSettings() {
-  apiKey = document.getElementById('api-key-input').value.trim();
+  apiKey = document.getElementById('api-key-input').value.trim() || DEFAULT_API_KEY;
+  baseURL = document.getElementById('baseurl-input').value.trim() || DEFAULT_BASE_URL;
   systemPrompt = document.getElementById('system-prompt-input').value.trim() ||
     '你是一个专业的问答助手。请根据知识库内容回答问题。';
   model = document.getElementById('model-select').value;
   appName = document.getElementById('app-name-input').value.trim() || '知识问答';
 
   localStorage.setItem('qa_key', apiKey);
+  localStorage.setItem('qa_baseurl', baseURL);
   localStorage.setItem('qa_prompt', systemPrompt);
   localStorage.setItem('qa_model', model);
   localStorage.setItem('qa_name', appName);
@@ -605,7 +616,7 @@ async function sendMessage() {
   setStatus('思考中…', 'loading');
 
   try {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    const res = await fetch(`${baseURL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
